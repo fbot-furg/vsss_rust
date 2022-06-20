@@ -16,6 +16,7 @@ use std::time::Duration;
 
 use socket2::{Domain, Protocol, SockAddr, Socket, Type};
 
+
 pub const PORT: u16 = 10002;
 lazy_static! {
     // 224.5.23.2
@@ -85,68 +86,6 @@ fn join_multicast(addr: SocketAddr) -> io::Result<UdpSocket> {
     Ok(socket.into_udp_socket())
 }
 
-fn multicast_listener(
-    response: &'static str,
-    client_done: Arc<AtomicBool>,
-    addr: SocketAddr,
-) -> JoinHandle<()> {
-    // A barrier to not start the client test code until after the server is running
-    let server_barrier = Arc::new(Barrier::new(2));
-    let client_barrier = Arc::clone(&server_barrier);
-
-    let join_handle = std::thread::Builder::new()
-        .name(format!("{}:server", response))
-        .spawn(move || {
-            // socket creation will go here...
-            let listener = join_multicast(addr).expect("failed to create listener");
-            println!("{}:server: joined: {}", response, addr);
-
-            server_barrier.wait();
-            println!("{}:server: is ready", response);
-
-            // We'll be looping until the client indicates it is done.
-            while !client_done.load(std::sync::atomic::Ordering::Relaxed) {
-                // test receive and response code will go here...
-                let mut buf = [0u8; 64]; // receive buffer
-
-                // we're assuming failures were timeouts, the client_done loop will stop us
-                match listener.recv_from(&mut buf) {
-                    Ok((len, remote_addr)) => {
-                        let data = &buf[..len];
-
-                        println!(
-                            "{}:server: got data: {} from: {}",
-                            response,
-                            String::from_utf8_lossy(data),
-                            remote_addr
-                        );
-
-                        // create a socket to send the response
-                        let responder = new_socket(&remote_addr)
-                            .expect("failed to create responder")
-                            .into_udp_socket();
-
-                        // we send the response that was set at the method beginning
-                        responder
-                            .send_to(response.as_bytes(), &remote_addr)
-                            .expect("failed to respond");
-
-                        println!("{}:server: sent response to: {}", response, remote_addr);
-                    }
-                    Err(err) => {
-                        println!("{}:server: got an error: {}", response, err);
-                    }
-                }
-            }
-
-            println!("{}:server: client is done", response);
-        })
-        .unwrap();
-
-    client_barrier.wait();
-    join_handle
-}
-
 fn new_sender(addr: &SocketAddr) -> io::Result<UdpSocket> {
     let socket = new_socket(addr)?;
 
@@ -180,57 +119,9 @@ impl Drop for NotifyServer {
     }
 }
 
-/// Our generic test over different IPs
-fn test_multicast(test: &'static str, addr: IpAddr) {
-    assert!(addr.is_multicast());
-    let addr = SocketAddr::new(addr, PORT);
-
-    let client_done = Arc::new(AtomicBool::new(false));
-    let notify = NotifyServer(Arc::clone(&client_done));
-
-    multicast_listener(test, client_done, addr);
-
-    // client test code send and receive code after here
-    println!("{}:client: running", test);
-
-    let message = b"Hello from client!";
-
-    // create the sending socket
-    let socket = new_sender(&addr).expect("could not create sender!");
-    socket.send_to(message, &addr).expect("could not send_to!");
-
-    let mut buf = [0u8; 64]; // receive buffer
-
-    match socket.recv_from(&mut buf) {
-        Ok((len, remote_addr)) => {
-            let data = &buf[..len];
-            let response = String::from_utf8_lossy(data);
-
-            println!("{}:client: got data: {}", test, response);
-
-            // verify it's what we expected
-            assert_eq!(test, response);
-        }
-        Err(err) => {
-            println!("{}:client: had a problem: {}", test, err);
-            assert!(false);
-        }
-    }
-
-    // make sure we don't notify the server until the end of the client test
-    drop(notify);
-}
-
-#[test]
-fn test_ipv4_multicast() {
-    test_multicast("ipv4", *IPV4);
-}
-
-#[test]
-fn test_ipv6_multicast() {
-    test_multicast("ipv6", *IPV6);
-}
-
+mod protos;
+use protos::common::{Ball};
+use protobuf::{parse_from_bytes,Message};
 
 fn main() {
     let test = "ipv4";
@@ -241,31 +132,28 @@ fn main() {
     let client_done = Arc::new(AtomicBool::new(false));
     let notify = NotifyServer(Arc::clone(&client_done));
 
-    multicast_listener(test, client_done, addr);
-
     // client test code send and receive code after here
     println!("{}:client: running", test);
 
-    let message = b"Hello from client!";
-
-    // create the sending socket
+  
     let socket = new_sender(&addr).expect("could not create sender!");
-    // socket.send_to(message, &addr).expect("could not send_to!");
+
 
     let mut buf = [0u8; 64]; // receive buffer
 
     match socket.recv_from(&mut buf) {
         Ok((len, remote_addr)) => {
             let data = &buf[..len];
-            let response = String::from_utf8_lossy(data);
 
-            println!("{}:client: got data: {}", test, response);
+            let in_msg = parse_from_bytes::<Ball>(&data).unwrap();
+
+            print!("{:?}", data);
+            print!("{:?}", in_msg.get_x());
         }
         Err(err) => {
             println!("{}:client: had a problem: {}", test, err);
         }
     }
-
     // make sure we don't notify the server until the end of the client test
     drop(notify);
 }
