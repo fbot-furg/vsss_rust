@@ -1,14 +1,9 @@
-extern crate protoc_rust;
+extern crate prost_build;
 
-use protoc_rust::Customize;
+use std::{result::Result, io::Error};
 
-fn main() {
-	protoc_rust::run(protoc_rust::Args {
-	    out_dir: "src/protos",
-	    input: &["src/protos/common.proto"],
-	    includes: &["src/protos"],
-	    customize: Customize {
-	      ..Default::default()
-	    },
-	}).expect("protoc");
+fn main() -> Result<(), Error> {
+    prost_build::compile_protos(&["src/grSim_Commands.proto", "src/grSim_.proto", "src/grSim_Commands.proto"], &["src"])?;
+
+    Ok(())
 }
