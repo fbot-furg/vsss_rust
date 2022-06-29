@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package fira_message;
+package fira_message.sim_to_ref;
 
 message Ball {
     double x = 1;
