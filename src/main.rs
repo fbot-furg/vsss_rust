@@ -14,7 +14,7 @@ fn main() {
             let commands = fira_protos::Commands {
                 robot_commands: vec![
                     fira_protos::Command {
-                        id: 0,
+                        id: 3,
                         yellowteam: false,
                         wheel_left: velocidade,
                         wheel_right: velocidade
