@@ -1,7 +1,7 @@
 # fbot-vss-rust
 Rust version
 
-** Precisa instalar rust **
+**Precisa instalar rust**
 
 Comandos para instalar o FIRASim estão no arquivo `install-commands.md`
 
