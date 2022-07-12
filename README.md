@@ -1,7 +1,7 @@
 # fbot-vss-rust
 Rust version
 
-Comandos para instalar o FIRASim estão 
+Comandos para instalar o FIRASim estão no arquivo `install-commands.md`
 
 ## Protos
 https://github.com/robocin/ssl-client/tree/master/include/ssl-client/protobuf-files/pb/proto
