@@ -1,4 +1,4 @@
-use fbot_vss_rust::fira_rust::{fira_protos, get_ball, get_blue_robot, send_command};
+use fbot_vss_rust::fira_rust::{fira_protos, get_ball, get_yellow_robot, send_command};
 
 fn main() {
     loop {
@@ -6,7 +6,7 @@ fn main() {
         let ball = get_ball();
 
         // TODO Garantir retorno do goalie
-        if let Some(goalie)  = get_blue_robot(0) {
+        if let Some(goalie)  = get_yellow_robot(0) {
             let err = ball.y - goalie.y;
 
             let velocidade = err * 1000.0;
@@ -15,7 +15,7 @@ fn main() {
                 robot_commands: vec![
                     fira_protos::Command {
                         id: 0,
-                        yellowteam: false,
+                        yellowteam: true,
                         wheel_left: velocidade,
                         wheel_right: velocidade
                     },

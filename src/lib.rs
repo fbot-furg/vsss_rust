@@ -99,5 +99,12 @@ pub mod fira_rust {
 
         } else { None }
     }
+
+    pub fn got_to(target_x: f64, target_y: f64) {
+        // O comando está apenas funcionando com o robo do time amarelo id 0
+
+        
+    }
+
 }
 
