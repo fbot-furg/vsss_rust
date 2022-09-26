@@ -212,13 +212,13 @@ impl Ball {
         let ball = ball();
         let ball_point = Point::new(ball.x, ball.y);
     
-        let GOAL_POINT = Point::new(-0.75, 0.0);
-        let CP = 0.5;
+        let goal_point = Point::new(-0.75, 0.0);
+        let cp = 0.5;
         
-        let orientation_to_goal = ball_point.orientation_to(&GOAL_POINT);
+        let orientation_to_goal = ball_point.orientation_to(&goal_point);
         
-        let cp_x = orientation_to_goal.cos() * CP;
-        let cp_y = orientation_to_goal.sin() * CP;
+        let cp_x = orientation_to_goal.cos() * cp;
+        let cp_y = orientation_to_goal.sin() * cp;
     
         Point::new(ball.x + cp_x, ball.y + cp_y)
         
