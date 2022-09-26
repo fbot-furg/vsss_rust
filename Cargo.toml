@@ -5,10 +5,10 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-tokio = { version = "1", features = ["full"] }
-bytes = "1.1.0"
-prost = "0.10"
-prost-types = "0.10"
+fbot_rust_client = { git = "https://github.com/vsssfbot/fbot_rust_client" }
+
+flo_curves = "0.1.0"
+plotlib = "0.5.1"
 
 
 [build-dependencies]

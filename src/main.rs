@@ -1,48 +1,34 @@
-use fbot_vss_rust::fira_rust::{fira_protos, get_ball, get_yellow_robot, send_command};
+use fbot_vss_rust::{Robot, Team, Ball, Point};
+use flo_curves::{bezier::Curve, Coord2, BezierCurve};
+use std::{thread, time};
 
-const ORIENTATION_KP: f64 = 10.0;
-const ROBOT_SPEED: f64 = 20.0;
 fn main() {
-    loop {
-        let ball = get_ball();
-        if let Some(goalie) = get_yellow_robot(0) {
-            let (target_x, target_y) = (ball.x, ball.y);
+    let goalie = Robot::new(0, Team::Yellow);
+    let ball = Ball::new();
 
-            let diff_x = target_x - goalie.x;
-            let diff_y = target_y - goalie.y;
-
-            let target_orientation = (diff_y/diff_x).atan();
-
-            let err_orientation = target_orientation - goalie.orientation;
+    let cp_goalie = goalie.control_point();
+    let cp_ball = ball.control_point();
 
 
-            let dist = (diff_x*diff_x + diff_y*diff_y).sqrt();
+    let curve = Curve {
+        start_point: Coord2 (goalie.x(), goalie.y()),
+        end_point: Coord2 (ball.x(), ball.y()),
+        control_points: (Coord2 (cp_goalie.x(), cp_goalie.y()), Coord2 (cp_ball.x(), cp_ball.y()) )
+    };
 
+    for i in 0..50 { 
+        let pos: f64 = i as f64 / 20.0;
+        
+        let point = curve.point_at_pos(pos);
+        let (x, y) = (point.0, point.1);
 
-            let (vel_left, vel_right) = if dist < 0.1 {
-                (0.0, 0.0)
-            } else {
-                let velocidade = err_orientation * ORIENTATION_KP;
-
-                if diff_x > 0.0 {
-                    (-velocidade + ROBOT_SPEED, velocidade + ROBOT_SPEED)
-                } else {
-                    (-velocidade - ROBOT_SPEED, velocidade - ROBOT_SPEED)
-                }
-            };
-
-            let commands = fira_protos::Commands {
-                robot_commands: vec![
-                    fira_protos::Command {
-                        id: 0,
-                        yellowteam: true,
-                        wheel_left: vel_left,
-                        wheel_right: vel_right
-                    },
-                ]
-            };
-
-            send_command(commands);
-        }
+        //TODO async await
+        goalie.go_to(Point::new(x, y));
     }
+
+    goalie.set_speed(1000.0, 1000.0);
+
+    thread::sleep(time::Duration::from_millis(200));
+
+    goalie.set_speed(0.0, 0.0);
 }
