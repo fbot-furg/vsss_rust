@@ -1,110 +1,227 @@
-pub mod fira_rust {
-    use std::io::Cursor;
-    use prost::Message;
-    use std::net::UdpSocket;
+use fbot_rust_client::fira_protos;
+use fbot_rust_client::{ball, yellow_robot, blue_robot};
 
-    const VISION_ADDRS: &str = "224.0.0.1:10002";
-    const COMMAND_ADDRS: &str = "127.0.0.1:20011";
+const ORIENTATION_KP: f64 = 20.0;
+const ROBOT_SPEED: f64 = 20.0;
 
-    pub mod fira_protos {
-        include!(concat!(env!("OUT_DIR"), "/fira_message.sim_to_ref.rs"));
-    }    
+#[derive(Debug, PartialEq)]
+pub enum Team{
+    Yellow,
+    Blue
+}
 
-    pub fn serialize_packet(packet: &fira_protos::Packet) -> Vec<u8> {
-        let mut buf = Vec::new();
-        buf.reserve(packet.encoded_len());
-        
-        // Unwrap is safe, since we have reserved sufficient capacity in the vector.
-        packet.encode(&mut buf).unwrap();
-        buf
+// TODO
+// Implement cord funcitons inside point
+#[derive(Debug)]
+pub struct Point {
+    x: f64,
+    y: f64
+}
+
+impl Point {
+    pub fn new(x: f64, y: f64) -> Self {
+        Self {
+            x: x,
+            y: y
+        }
     }
 
-    pub fn deserialize_env(buf: &[u8]) -> Result<fira_protos::Environment, prost::DecodeError> {
-        fira_protos::Environment::decode(&mut Cursor::new(buf))
+    pub fn x(&self) -> f64 {
+        self.x
     }
 
-    pub fn send_command(commands: fira_protos::Commands) {
-        let socket_sender = UdpSocket::bind(VISION_ADDRS).unwrap();
-
-        let packet = fira_protos::Packet {
-            cmd: Some(commands),
-            replace: None        
-        };
-        let buf = serialize_packet(&packet); 
-
-        match socket_sender.send_to(&buf, COMMAND_ADDRS) {
-            Ok(_) => {},
-            Err(e) => {
-                println!("Error Send {}", e)
-            }
-        };
+    pub fn y(&self) -> f64 {
+        self.y
     }
 
-    fn get_frame() -> Option<fira_protos::Frame>{
-        let socket = UdpSocket::bind(VISION_ADDRS).unwrap();
-        let mut buf = [0; 1024];
+    pub fn orientation_to(&self, p: &Point) -> f64 {
+        let x = p.x - self.x;
+        let y = p.y - self.y;
 
-        let (len, addr) = socket.recv_from(&mut buf).unwrap();
-        
-        let env = deserialize_env(&buf[..len]).unwrap();
-
-        env.frame
+        y.atan2(x)
     }
 
-    pub fn get_ball() -> fira_protos::Ball {
-        let mut ret = fira_protos::Ball{
-            x: 0.0,
-            y: 0.0,
-            z: 0.0,
-            vx: 0.0,
-            vy: 0.0,
-            vz: 0.0,
-        };
+    pub fn distance_to(&self, p: &Point) -> f64 {
+        let x = p.x - self.x;
+        let y = p.y - self.y;
 
-        if let Some(frame) = get_frame() {
-            if let Some(ball) = frame.ball {
-                ret = ball
-            }
+        (x*x + y*y).sqrt()
+    }
+}
+
+#[derive(Debug)]
+pub struct Robot {
+    id: u32,
+    team: Team,
+}
+
+impl Robot {
+    pub fn new(id: u32, team: Team) -> Self {
+        Self {
+            id: id,
+            team: team,
+        }
         }
 
-        ret
+    fn robot(&self) -> fira_protos::Robot{
+        match self.team {
+            Team::Yellow => yellow_robot(&self.id).unwrap(),
+            Team::Blue => blue_robot(&self.id).unwrap()
+        }
     }
 
-    pub fn get_blue_robot(id: u32) -> Option<fira_protos::Robot> {
-        if let Some(frame) = get_frame() {
-            let mut ret = None;
-
-            for robot in frame.robots_blue {
-                if robot.robot_id == id {
-                    ret = Some(robot)
-                }
-            };
-
-            ret
-
-        } else { None }
+    pub fn x(&self) -> f64 {
+        self.robot().x
     }
 
-    pub fn get_yellow_robot(id: u32) -> Option<fira_protos::Robot> {
-        if let Some(frame) = get_frame() {
-            let mut ret = None;
-
-            for robot in frame.robots_yellow {
-                if robot.robot_id == id {
-                    ret = Some(robot)
-                }
-            };
-
-            ret
-
-        } else { None }
+    pub fn y(&self) -> f64 {
+        self.robot().y
     }
 
-    pub fn got_to(target_x: f64, target_y: f64) {
-        // O comando está apenas funcionando com o robo do time amarelo id 0
+    pub fn orientation(&self) -> f64 {
+        self.robot().orientation
+    }
 
+    pub fn reverse_orientation(&self) -> f64 {
+        self.robot().orientation + std::f64::consts::PI
+    }
+
+    pub fn point(&self) -> Point {
+        Point::new(self.x(), self.y())
+    }
+
+    pub fn control_point(&self) -> Point {
+        let cp = 1.0;
+        let (x, y, orientation) = (self.x(), self.y(), self.orientation());
+
+        let cp_x = orientation.cos() * cp;
+        let cp_y = orientation.sin() * cp;
+
+        Point::new(x + cp_x, y + cp_y)
+    }
+
+    // TODO
+    // Extrar a logica de envio de comandos para outro ponto
+    pub fn set_speed(&self, wheel_left: f64, wheel_right: f64) {
+        let commands = fira_protos::Commands {
+            robot_commands: vec![
+                fira_protos::Command {
+                    id: 0,
+                    yellowteam: self.team == Team::Yellow,
+                    wheel_left: wheel_left,
+                    wheel_right: wheel_right,
+                },
+            ]
+        };
+
+        fbot_rust_client::send_command(commands);
+    }
+
+    pub fn go_to(&self, target_point: Point) {
+        
+        // Se o Robo estiver muito proximo do ponto, nao faz nada
+        if self.point().distance_to(&target_point) < 0.1 {
+            self.set_speed(0.0, 0.0);
+            return;
+        }
+
+        let target_angle = self.point().orientation_to(&target_point);
+        let robot_angle = self.orientation();
+        
+        let mut angle_error = target_angle - robot_angle;
+
+        // Normaliza o angulo
+        if angle_error > std::f64::consts::PI {
+            angle_error -= 2.0 * std::f64::consts::PI;
+        } else if angle_error < -std::f64::consts::PI {
+            angle_error += 2.0 * std::f64::consts::PI;
+        }
+
+        // Calcula a velocidade angular
+        let angular_speed = angle_error * ORIENTATION_KP;
+
+        // Calculata velocidade das rodas
+        let wheel_left = ROBOT_SPEED - angular_speed;
+        let wheel_right = ROBOT_SPEED + angular_speed;
+
+        // Send command
+        self.set_speed(wheel_left, wheel_right);
+    }
+
+    pub fn go_to2(&self, target_point: Point) {
+        
+        // Se o Robo estiver muito proximo do ponto, nao faz nada
+        if self.point().distance_to(&target_point) < 0.05 {
+            self.set_speed(0.0, 0.0);
+            return;
+        }
+
+        let target_angle = self.point().orientation_to(&target_point);
+        let robot_angle = self.orientation();
+        let robot_angle_reverse = self.reverse_orientation();
+        
+        let angle_error = target_angle - robot_angle;
+        let angle_error_reverse = target_angle - robot_angle_reverse;
+
+        let (mut smallest_angle_error, speed) = if angle_error.abs() < angle_error_reverse.abs() {
+            (angle_error, ROBOT_SPEED)
+        } else {
+            (angle_error_reverse, -ROBOT_SPEED)
+        };
+
+        // Normaliza o angulo
+        if smallest_angle_error > std::f64::consts::PI {
+            smallest_angle_error -= 2.0 * std::f64::consts::PI;
+        } else if smallest_angle_error < -std::f64::consts::PI {
+            smallest_angle_error += 2.0 * std::f64::consts::PI;
+        }
+        
+        let angular_speed = smallest_angle_error * ORIENTATION_KP;
+
+        // Calcular velocidade das rodas
+        let wheel_left = speed - angular_speed;
+        let wheel_right = speed + angular_speed;
+
+        // Envia Comando
+        self.set_speed(wheel_left, wheel_right);
+    }
+}
+
+// TODO 
+// create struct Ball
+pub struct Ball {} 
+
+impl Ball {
+    pub fn new() -> Self {
+        Self {}
+    }
+
+    pub fn x(&self) -> f64 {
+        ball().x
+    }
+
+    pub fn y(&self) -> f64 {
+        ball().y
+    }
+
+    pub fn point(&self) -> Point {
+        Point::new(self.x(), self.y())
+    }
+
+    pub fn control_point(&self) -> Point{
+        let ball = ball();
+        let ball_point = Point::new(ball.x, ball.y);
+    
+        let GOAL_POINT = Point::new(-0.75, 0.0);
+        let CP = 0.5;
+        
+        let orientation_to_goal = ball_point.orientation_to(&GOAL_POINT);
+        
+        let cp_x = orientation_to_goal.cos() * CP;
+        let cp_y = orientation_to_goal.sin() * CP;
+    
+        Point::new(ball.x + cp_x, ball.y + cp_y)
         
     }
-
 }
 
