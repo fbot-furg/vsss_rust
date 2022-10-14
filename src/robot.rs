@@ -1,13 +1,13 @@
 use fbot_rust_client::fira_protos;
-use fbot_rust_client::{yellow_robot, blue_robot};
-use crate::{Point, Team};
+// use fbot_rust_client::{yellow_robot, blue_robot};
+use crate::{Point, Team, FIRASIM};
 
 // Teste Kick
-use flo_curves::{bezier::Curve, Coord2, BezierCurve};
-use std::{thread, time};
+// use flo_curves::{bezier::Curve, Coord2, BezierCurve};
+// use std::{thread, time};
 
-const ORIENTATION_KP: f64 = 20.0;
-const ROBOT_SPEED: f64 = 20.0;
+const ORIENTATION_KP: f64 = 5.0;
+const ROBOT_SPEED: f64 = 10.0;
 
 #[derive(Debug)]
 pub struct Robot {
@@ -21,13 +21,21 @@ impl Robot {
             id: id,
             team: team,
         }
-        }
+    }
 
     fn robot(&self) -> fira_protos::Robot{
         match self.team {
-            Team::Yellow => yellow_robot(&self.id).unwrap(),
-            Team::Blue => blue_robot(&self.id).unwrap()
+            Team::Yellow => FIRASIM.yellow_robot(&self.id).unwrap(),
+            Team::Blue => FIRASIM.blue_robot(&self.id).unwrap()
         }
+    }
+
+    pub fn id(&self) -> u32 {
+        self.id
+    }
+
+    pub fn team(&self) -> Team {
+        self.team
     }
 
     pub fn x(&self) -> f64 {
@@ -61,7 +69,7 @@ impl Robot {
     }
 
     // TODO
-    // Extrai r a logica de envio de comandos para outro ponto
+    // Extrair a logica de envio de comandos para outro ponto
     pub fn set_speed(&self, wheel_left: f64, wheel_right: f64) {
         let commands = fira_protos::Commands {
             robot_commands: vec![
@@ -74,7 +82,7 @@ impl Robot {
             ]
         };
 
-        fbot_rust_client::send_command(commands);
+        FIRASIM.send_command(commands);
     }
 
     pub fn go_to(&self, target_point: Point) {
@@ -108,12 +116,17 @@ impl Robot {
         self.set_speed(wheel_left, wheel_right);
     }
 
-    pub fn go_to2(&self, target_point: Point) {
+    pub fn go_to2(&self, target_point: Point) -> fira_protos::Command {
         
         // Se o Robo estiver muito proximo do ponto, nao faz nada
         if self.point().distance_to(&target_point) < 0.05 {
-            self.set_speed(0.0, 0.0);
-            return;
+            // self.set_speed(0.0, 0.0);
+            return fira_protos::Command {
+                id: self.id,
+                yellowteam: self.team == Team::Yellow,
+                wheel_left: 0.0,
+                wheel_right: 0.0,
+            };
         }
 
         let target_angle = self.point().orientation_to(&target_point);
@@ -143,7 +156,13 @@ impl Robot {
         let wheel_right = speed + angular_speed;
 
         // Envia Comando
-        self.set_speed(wheel_left, wheel_right);
+        fira_protos::Command {
+            id: self.id,
+            yellowteam: self.team == Team::Yellow,
+            wheel_left: wheel_left,
+            wheel_right: wheel_right,
+        }
+        // self.set_speed(wheel_left, wheel_right);
     }
 
     pub fn kick() {

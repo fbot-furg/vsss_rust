@@ -1,5 +1,4 @@
-use fbot_rust_client::{ball};
-use crate::Point;
+use crate::{FIRASIM, Point};
 pub struct Ball {} 
 
 impl Ball {
@@ -8,11 +7,11 @@ impl Ball {
     }
 
     pub fn x(&self) -> f64 {
-        ball().x
+        FIRASIM.ball().x
     }
 
     pub fn y(&self) -> f64 {
-        ball().y
+        FIRASIM.ball().y
     }
 
     pub fn point(&self) -> Point {
@@ -20,7 +19,7 @@ impl Ball {
     }
 
     pub fn control_point(&self) -> Point{
-        let ball = ball();
+        let ball = FIRASIM.ball();
         let ball_point = Point::new(ball.x, ball.y);
     
         let goal_point = Point::new(-0.75, 0.0);
