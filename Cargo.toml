@@ -5,11 +5,8 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-fbot_rust_client = { git = "https://github.com/vsssfbot/fbot_rust_client" }
+fbot_rust_client = { version = "0.2.0", git = "https://github.com/vsssfbot/fbot_rust_client" }
 
-flo_curves = "0.1.0"
-plotlib = "0.5.1"
-
-
-[build-dependencies]
-prost-build = "0.10.4"
+# flo_curves = "0.1.0"
+# plotlib = "0.5.1"
+lazy_static = "1.4.0"
