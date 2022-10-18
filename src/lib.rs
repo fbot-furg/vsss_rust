@@ -1,18 +1,9 @@
-// use fbot_rust_client::{FIRASim};
 
 mod robot;
 mod ball;
 
 pub use robot::Robot;
 pub use ball::Ball;
-
-use lazy_static::lazy_static;
-
-
-//Esse comportamento singleton tem que estar no client
-lazy_static! {
-    pub static ref FIRASIM: fbot_rust_client::FIRASim = fbot_rust_client::FIRASim::new();
-}
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Team{

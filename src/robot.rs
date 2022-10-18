@@ -1,13 +1,12 @@
-use fbot_rust_client::fira_protos;
-// use fbot_rust_client::{yellow_robot, blue_robot};
-use crate::{Point, Team, FIRASIM};
+use fbot_rust_client::{FIRASIM, fira_protos};
+use crate::{Point, Team};
 
 // Teste Kick
 // use flo_curves::{bezier::Curve, Coord2, BezierCurve};
 // use std::{thread, time};
 
-const ORIENTATION_KP: f64 = 5.0;
-const ROBOT_SPEED: f64 = 10.0;
+const ORIENTATION_KP: f64 = 10.0;
+const ROBOT_SPEED: f64 = 20.0;
 
 #[derive(Debug)]
 pub struct Robot {
@@ -25,8 +24,8 @@ impl Robot {
 
     fn robot(&self) -> fira_protos::Robot{
         match self.team {
-            Team::Yellow => FIRASIM.yellow_robot(&self.id).unwrap(),
-            Team::Blue => FIRASIM.blue_robot(&self.id).unwrap()
+            Team::Yellow => FIRASIM.yellow_robot(&self.id),
+            Team::Blue => FIRASIM.blue_robot(&self.id)
         }
     }
 

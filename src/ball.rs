@@ -1,4 +1,5 @@
-use crate::{FIRASIM, Point};
+use crate::{Point};
+use fbot_rust_client::{FIRASIM};
 pub struct Ball {} 
 
 impl Ball {
