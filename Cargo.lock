@@ -70,8 +70,8 @@ dependencies = [
 
 [[package]]
 name = "fbot_rust_client"
-version = "0.2.0"
-source = "git+https://github.com/vsssfbot/fbot_rust_client#93d45430c7e4ae0884b1e9be25ae40817f739b17"
+version = "0.5.0"
+source = "git+https://github.com/vsssfbot/fbot_rust_client#bcbb7fade3c4b53f7f3b2edf7a05d6f301195ded"
 dependencies = [
  "bytes",
  "lazy_static",
@@ -87,7 +87,6 @@ name = "fbot_vss_rust"
 version = "0.1.0"
 dependencies = [
  "fbot_rust_client",
- "lazy_static",
 ]
 
 [[package]]
