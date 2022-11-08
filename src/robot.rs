@@ -1,31 +1,36 @@
-use fbot_rust_client::{FIRASIM, fira_protos};
-use crate::{Point, Team};
+use fbot_rust_client::{FIRASIM, SSLVISION, fira_protos, ssl_vision_protos};
+use crate::{Point, Team, Origin};
 
 // Teste Kick
 // use flo_curves::{bezier::Curve, Coord2, BezierCurve};
 // use std::{thread, time};
 
-const ORIENTATION_KP: f64 = 10.0;
+const ORIENTATION_KP: f64 = 5.0;
 const ROBOT_SPEED: f64 = 20.0;
 
 #[derive(Debug)]
 pub struct Robot {
+    origin: Origin,
     id: u32,
     team: Team,
 }
 
 impl Robot {
-    pub fn new(id: u32, team: Team) -> Self {
-        Self {
-            id: id,
-            team: team,
-        }
+    pub fn new(origin: Origin, id: u32, team: Team) -> Self {
+        Self { origin, id, team }
     }
 
-    fn robot(&self) -> fira_protos::Robot{
+    fn robot_fira(&self) -> fira_protos::Robot{
         match self.team {
             Team::Yellow => FIRASIM.yellow_robot(&self.id),
             Team::Blue => FIRASIM.blue_robot(&self.id)
+        }
+    }
+
+    fn robot_vision(&self) -> ssl_vision_protos::SslDetectionRobot{
+        match self.team {
+            Team::Yellow => SSLVISION.yellow_robot(&self.id),
+            Team::Blue => SSLVISION.blue_robot(&self.id)
         }
     }
 
@@ -38,19 +43,34 @@ impl Robot {
     }
 
     pub fn x(&self) -> f64 {
-        self.robot().x
+        match self.origin {
+            Origin::FIRASIM => self.robot_fira().x,
+            Origin::SSLVISION => self.robot_vision().x.into()
+        }
     }
 
     pub fn y(&self) -> f64 {
-        self.robot().y
+        match self.origin {
+            Origin::FIRASIM => self.robot_fira().y,
+            Origin::SSLVISION => self.robot_vision().y.into()
+        }
     }
 
     pub fn orientation(&self) -> f64 {
-        self.robot().orientation
+        match self.origin {
+            Origin::FIRASIM => self.robot_fira().orientation,
+            Origin::SSLVISION => {
+                if let Some(orientation) = self.robot_vision().orientation {
+                    orientation.into()
+                } else {
+                    0.0
+                }
+            }
+        }
     }
 
     pub fn reverse_orientation(&self) -> f64 {
-        self.robot().orientation + std::f64::consts::PI
+        self.orientation() + std::f64::consts::PI
     }
 
     pub fn point(&self) -> Point {
@@ -115,17 +135,20 @@ impl Robot {
         self.set_speed(wheel_left, wheel_right);
     }
 
-    pub fn go_to2(&self, target_point: Point) -> fira_protos::Command {
-        
+    // pub fn go_to2(&self, target_point: Point) -> fira_protos::Command {
+    pub fn go_to2(&self, target_point: Point) -> (f64, f64) {
+        println!("distance: {}", self.point().distance_to(&target_point) );
+
         // Se o Robo estiver muito proximo do ponto, nao faz nada
-        if self.point().distance_to(&target_point) < 0.05 {
+        if self.point().distance_to(&target_point) < 150.0 {
             // self.set_speed(0.0, 0.0);
-            return fira_protos::Command {
-                id: self.id,
-                yellowteam: self.team == Team::Yellow,
-                wheel_left: 0.0,
-                wheel_right: 0.0,
-            };
+            // return fira_protos::Command {
+            //     id: self.id,
+            //     yellowteam: self.team == Team::Yellow,
+            //     wheel_left: 0.0,
+            //     wheel_right: 0.0,
+            // };
+            return (0.0, 0.0)
         }
 
         let target_angle = self.point().orientation_to(&target_point);
@@ -155,12 +178,14 @@ impl Robot {
         let wheel_right = speed + angular_speed;
 
         // Envia Comando
-        fira_protos::Command {
-            id: self.id,
-            yellowteam: self.team == Team::Yellow,
-            wheel_left: wheel_left,
-            wheel_right: wheel_right,
-        }
+        // fira_protos::Command {
+        //     id: self.id,
+        //     yellowteam: self.team == Team::Yellow,
+        //     wheel_left: wheel_left,
+        //     wheel_right: wheel_right,
+        // }
+
+        return (wheel_left, wheel_right)
         // self.set_speed(wheel_left, wheel_right);
     }
 

@@ -1,27 +1,31 @@
 use fbot_rust_client::{FIRASIM, REFEREE, fira_protos};
-use fbot_vss_rust::{Robot, Team, Ball, Point};
+use fbot_vss_rust::{Robot, Team, Ball, Point, Origin};
+use std::{thread, time};
 
 fn main() {
-    let mut commands: [Option<fira_protos::Command>;3] = [None, None, None];
+    let mut port = serialport::new("/dev/ttyUSB0", 9600)
+        .timeout(time::Duration::from_millis(50))
+        .open().expect("Failed to open port");
 
-    let ball = Ball::new();
-    let goalie = Robot::new(0, Team::Yellow);
-    // let neymar = Robot::new(1, Team::Yellow);
-    // let robot3 = Robot::new(2, Team::Yellow);
+    let ball = Ball::new(Origin::SSLVISION);
+    let goalie = Robot::new(Origin::SSLVISION, 0, Team::Blue);
 
     loop {
-        println!("Foul: {:?}", REFEREE.foul());
+        // println!("{}", goalie.x());
+        let speeds = goalie.go_to2(ball.point());
 
-        // if REFEREE.foul() == ref_protos::Foul::FreeBall {
-            commands[goalie.id() as usize] = Some(goalie.go_to2(Point::new(0.6, ball.y())));
-            // commands[neymar.id() as usize] = Some(neymar.go_to2(Point::new(0.7, ball.y())));
-            // commands[robot3.id() as usize] = Some(robot3.go_to2(Point::new(0.1, ball.y())));
 
-            let robot_commands: Vec<fira_protos::Command> = commands.iter().filter_map(|x| x.to_owned()).collect();
+        let speeds: (u8, u8) = ((speeds.0 + 127.0) as u8, (speeds.1 + 127.0) as u8);
 
-            FIRASIM.send_command(fira_protos::Commands {
-                robot_commands
-            });      
-        // }
+        println!("Speed: {:?}", speeds);
+
+        let command: [u8; 5] = [5, 0, speeds.0, speeds.1, 15]; 
+
+        println!("Robot: {:?}", goalie.point());
+        println!("Ball: {:?}", ball.point());
+        println!("Command: {:?}", command);
+
+        port.write(&command).expect("Write failed!");
+        thread::sleep(time::Duration::from_millis(5));
     }
 }

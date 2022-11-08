@@ -1,18 +1,26 @@
-use crate::{Point};
-use fbot_rust_client::{FIRASIM};
-pub struct Ball {} 
+use crate::{Point, Origin};
+use fbot_rust_client::{FIRASIM, SSLVISION};
+pub struct Ball {
+    origin: Origin
+} 
 
 impl Ball {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(origin: Origin) -> Self {
+        Self { origin }
     }
 
     pub fn x(&self) -> f64 {
-        FIRASIM.ball().x
+        match self.origin {
+            Origin::FIRASIM => FIRASIM.ball().x,
+            Origin::SSLVISION => SSLVISION.ball().x.into()
+        }
     }
 
     pub fn y(&self) -> f64 {
-        FIRASIM.ball().y
+        match self.origin {
+            Origin::FIRASIM => FIRASIM.ball().y,
+            Origin::SSLVISION => SSLVISION.ball().y.into()
+        }
     }
 
     pub fn point(&self) -> Point {

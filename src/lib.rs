@@ -11,6 +11,11 @@ pub enum Team{
     Blue
 }
 
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum Origin{
+    FIRASIM,
+    SSLVISION
+}
 #[derive(Debug)]
 pub struct Point {
     x: f64,
