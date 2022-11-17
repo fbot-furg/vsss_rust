@@ -1,5 +1,5 @@
 use fbot_rust_client::{FIRASIM, SSLVISION, fira_protos, ssl_vision_protos};
-use crate::{Point, Team, Origin};
+use crate::{Point, Team, Origin, potential_field::Obstacle};
 
 // Teste Kick
 // use flo_curves::{bezier::Curve, Coord2, BezierCurve};
@@ -174,8 +174,8 @@ impl Robot {
         let angular_speed = smallest_angle_error * ORIENTATION_KP;
 
         // Calcular velocidade das rodas
-        let wheel_left = speed - angular_speed;
-        let wheel_right = speed + angular_speed;
+        let wheel_left = (speed - angular_speed).clamp(-50.0, 50.0);
+        let wheel_right = (speed + angular_speed).clamp(-50.0, 50.0);
 
         // Envia Comando
         // fira_protos::Command {
@@ -189,35 +189,45 @@ impl Robot {
         // self.set_speed(wheel_left, wheel_right);
     }
 
-    pub fn kick() {
-        // let goalie = Robot::new(0, Team::Yellow);
-        // let ball = Ball::new();
+    pub fn potential_field(&self, target_point: Point, obstacle: Obstacle) -> (f64, f64) {
+        use crate::potential_field::*;
 
-        // let cp_goalie = goalie.control_point();
-        // let cp_ball = ball.control_point();
+        // Se o Robo estiver muito proximo do ponto, nao faz nada
+        if self.point().distance_to(&target_point) < 0.1 {
+            // self.set_speed(0.0, 0.0);
+            return (0.0, 0.0)
+        }
 
+        let goal = Goal::new(target_point);
 
-        // let curve = Curve {
-        //     start_point: Coord2 (goalie.x(), goalie.y()),
-        //     end_point: Coord2 (ball.x(), ball.y()),
-        //     control_points: (Coord2 (cp_goalie.x(), cp_goalie.y()), Coord2 (cp_ball.x(), cp_ball.y()) )
-        // };
+        // let blue_robot = FIRASIM.blue_robot(&0);
+        // let blue_robot_point = Point::new(blue_robot.x, blue_robot.y);
+        // let obstacle = Obstacle::new(blue_robot_point, 0.2);
 
-        // for i in 0..50 { 
-        //     let pos: f64 = i as f64 / 20.0;
-            
-        //     let point = curve.point_at_pos(pos);
-        //     let (x, y) = (point.0, point.1);
+        let field = PotentialField::new(goal, vec![obstacle]);
 
-        //     //TODO async await
-        //     goalie.go_to(Point::new(x, y));
-        // }
+        let force = field.calculate_force(self.point());
 
-        // goalie.set_speed(1000.0, 1000.0);
+        let angle = force.angle();
 
-        // thread::sleep(time::Duration::from_millis(200));
+        let mut angle_error = angle - self.orientation();
 
-        // goalie.set_speed(0.0, 0.0);
+        // Normaliza o angulo
+        if angle_error > std::f64::consts::PI {
+            angle_error -= 2.0 * std::f64::consts::PI;
+        } else if angle_error < -std::f64::consts::PI {
+            angle_error += 2.0 * std::f64::consts::PI;
+        }
+
+        // Calcula a velocidade angular
+        let angular_speed = angle_error * ORIENTATION_KP;
+
+        // Calculata velocidade das rodas
+        let wheel_left = ROBOT_SPEED - angular_speed;
+        let wheel_right = ROBOT_SPEED + angular_speed;
+
+        // Send command
+        (wheel_left, wheel_right)
 
     }
 }

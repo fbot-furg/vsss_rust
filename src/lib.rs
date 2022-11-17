@@ -1,9 +1,11 @@
 
 mod robot;
 mod ball;
+mod potential_field;
 
 pub use robot::Robot;
 pub use ball::Ball;
+pub use potential_field::{Goal, Obstacle};
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Team{
@@ -50,5 +52,9 @@ impl Point {
         let y = p.y - self.y;
 
         (x*x + y*y).sqrt()
+    }
+
+    pub fn angle(&self) -> f64 {
+        self.y.atan2(self.x)
     }
 }
