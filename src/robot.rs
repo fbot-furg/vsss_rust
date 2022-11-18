@@ -5,8 +5,8 @@ use crate::{Point, Team, Origin, potential_field::Obstacle};
 // use flo_curves::{bezier::Curve, Coord2, BezierCurve};
 // use std::{thread, time};
 
-const ORIENTATION_KP: f64 = 5.0;
-const ROBOT_SPEED: f64 = 20.0;
+const ORIENTATION_KP: f64 = 1.0;
+const ROBOT_SPEED: f64 = 10.0;
 
 #[derive(Debug)]
 pub struct Robot {
@@ -193,7 +193,7 @@ impl Robot {
         use crate::potential_field::*;
 
         // Se o Robo estiver muito proximo do ponto, nao faz nada
-        if self.point().distance_to(&target_point) < 0.1 {
+        if self.point().distance_to(&target_point) < 20.0{
             // self.set_speed(0.0, 0.0);
             return (0.0, 0.0)
         }
@@ -204,7 +204,7 @@ impl Robot {
         // let blue_robot_point = Point::new(blue_robot.x, blue_robot.y);
         // let obstacle = Obstacle::new(blue_robot_point, 0.2);
 
-        let field = PotentialField::new(goal, vec![obstacle]);
+        let field = PotentialField::new(goal, vec![]);
 
         let force = field.calculate_force(self.point());
 
