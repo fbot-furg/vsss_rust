@@ -4,7 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-fbot_rust_client = { version = "0.5.0", git = "https://github.com/vsssfbot/fbot_rust_client" }
+# fbot_rust_client = { version = "0.6.0", git = "https://github.com/fbot-furg/vsss_client_rust.git" }
+fbot_rust_client = { version = "0.6.0", git = "https://github.com/user-vsssfurg/vsss_client_rust.git" }
+serialport = "4.2.0"
 
 # flo_curves = "0.1.0"
 # plotlib = "0.5.1"

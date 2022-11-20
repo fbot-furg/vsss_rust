@@ -5,6 +5,7 @@ mod potential_field;
 
 pub use robot::Robot;
 pub use ball::Ball;
+pub use potential_field::{Goal, Obstacle};
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Team{
@@ -12,6 +13,11 @@ pub enum Team{
     Blue
 }
 
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum Origin{
+    FIRASIM,
+    SSLVISION
+}
 #[derive(Debug)]
 pub struct Point {
     x: f64,
