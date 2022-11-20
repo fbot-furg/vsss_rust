@@ -1,33 +1,35 @@
-use fbot_rust_client::{FIRASIM, REFEREE, fira_protos, UVF};
-use fbot_vss_rust::{Robot, Team, Ball, Point};
+use fbot_rust_client::{FIRASIM, REFEREE, fira_protos};
+use fbot_vss_rust::{Origin, Robot, Team, Ball, Point, UVF, Goal, Obstacle};
 
 fn main() {
-    let a = UVF::new(Point::new(0.0, 0.0), vec![]);
+    let ball = Ball::new(Origin::FIRASIM);
+    let robot = Robot::new(Origin::FIRASIM, 0, Team::Yellow);
 
-    a.plot_vector_field();
+    let mut commands: [Option<fira_protos::Command>;1] = [None];
+    
+    loop {
+        let uvf = UVF::new(ball.point(), vec![]);
 
-    // let mut commands: [Option<fira_protos::Command>;3] = [None, None, None];
+        let force = uvf.calculate_force(&robot.point());
+        let target_point = Point::new(robot.point().x() - force.x(), robot.point().y() - force.y());
 
-    // let ball = Ball::new();
-    // let goalie = Robot::new(0, Team::Yellow);
-    // // let neymar = Robot::new(1, Team::Yellow);
-    // // let robot3 = Robot::new(2, Team::Yellow);
+        let speed = robot.go_to(target_point);
 
-    // loop {
-    //     println!("Foul: {:?}", REFEREE.foul());
+        let cmd =  fira_protos::Command {
+            id: 0,
+            yellowteam: true,
+            wheel_left: speed.0,
+            wheel_right: speed.1,
+        };
+        
+        commands[robot.id() as usize] = Some(cmd);
 
-    //     // if REFEREE.foul() == ref_protos::Foul::FreeBall {
-    //         commands[goalie.id() as usize] = Some(goalie.go_to2(Point::new(0.6, ball.y())));
-    //         // commands[neymar.id() as usize] = Some(neymar.go_to2(Point::new(0.7, ball.y())));
-    //         // commands[robot3.id() as usize] = Some(robot3.go_to2(Point::new(0.1, ball.y())));
+        let robot_commands: Vec<fira_protos::Command> = commands.iter().filter_map(|x| x.to_owned()).collect();
 
-    //         let robot_commands: Vec<fira_protos::Command> = commands.iter().filter_map(|x| x.to_owned()).collect();
-
-    //         FIRASIM.send_command(fira_protos::Commands {
-    //             robot_commands
-    //         });      
-    //     // }
-    // }
+        FIRASIM.send_command(fira_protos::Commands {
+            robot_commands
+        }); 
+    }
 }
 
 

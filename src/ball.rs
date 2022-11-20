@@ -11,14 +11,14 @@ impl Ball {
 
     pub fn x(&self) -> f64 {
         match self.origin {
-            Origin::FIRASIM => FIRASIM.ball().x,
+            Origin::FIRASIM => FIRASIM.ball().x * 100.0,
             Origin::SSLVISION => SSLVISION.ball().x.into()
         }
     }
 
     pub fn y(&self) -> f64 {
         match self.origin {
-            Origin::FIRASIM => FIRASIM.ball().y,
+            Origin::FIRASIM => FIRASIM.ball().y * 100.0,
             Origin::SSLVISION => SSLVISION.ball().y.into()
         }
     }

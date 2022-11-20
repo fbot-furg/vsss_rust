@@ -1,12 +1,14 @@
+use std::vec;
+
 use fbot_rust_client::{FIRASIM, SSLVISION, fira_protos, ssl_vision_protos};
-use crate::{Point, Team, Goal, Obstacle};
+use crate::{Point, Team, Goal, Obstacle, Origin, WheelsSpeeds};
 
 // Teste Kick
 // use flo_curves::{bezier::Curve, Coord2, BezierCurve};
 // use std::{thread, time};
 
-const ORIENTATION_KP: f64 = 1.0;
-const ROBOT_SPEED: f64 = 10.0;
+pub const ORIENTATION_KP: f64 = 18.0;
+pub const ROBOT_SPEED: f64 = 40.0;
 
 #[derive(Debug)]
 pub struct Robot {
@@ -44,14 +46,16 @@ impl Robot {
 
     pub fn x(&self) -> f64 {
         match self.origin {
-            Origin::FIRASIM => self.robot_fira().x,
+            //FIRASIM returns values in m, converting to cm
+            Origin::FIRASIM => self.robot_fira().x * 100.0,
             Origin::SSLVISION => self.robot_vision().x.into()
         }
     }
 
     pub fn y(&self) -> f64 {
         match self.origin {
-            Origin::FIRASIM => self.robot_fira().y,
+            //FIRASIM returns values in m, converting to cm
+            Origin::FIRASIM => self.robot_fira().y * 100.0,
             Origin::SSLVISION => self.robot_vision().y.into()
         }
     }
@@ -104,13 +108,13 @@ impl Robot {
         FIRASIM.send_command(commands);
     }
 
-    pub fn go_to(&self, target_point: Point) {
+    pub fn go_to(&self, target_point: Point) -> WheelsSpeeds{
         
         // Se o Robo estiver muito proximo do ponto, nao faz nada
-        if self.point().distance_to(&target_point) < 0.1 {
-            self.set_speed(0.0, 0.0);
-            return;
-        }
+        // if self.point().distance_to(&target_point) < 0.1 {
+        //     self.set_speed(0.0, 0.0);
+        //     return;
+        // }
 
         let target_angle = self.point().orientation_to(&target_point);
         let robot_angle = self.orientation();
@@ -131,25 +135,24 @@ impl Robot {
         let wheel_left = ROBOT_SPEED - angular_speed;
         let wheel_right = ROBOT_SPEED + angular_speed;
 
-        // Send command
-        self.set_speed(wheel_left, wheel_right);
+        (wheel_left, wheel_right)
     }
 
     // pub fn go_to2(&self, target_point: Point) -> fira_protos::Command {
-    pub fn go_to2(&self, target_point: Point) -> (f64, f64) {
-        println!("distance: {}", self.point().distance_to(&target_point) );
+    pub fn go_to2(&self, target_point: Point) -> WheelsSpeeds {
+        // println!("distance: {}", self.point().distance_to(&target_point) );
 
         // Se o Robo estiver muito proximo do ponto, nao faz nada
-        if self.point().distance_to(&target_point) < 150.0 {
-            // self.set_speed(0.0, 0.0);
-            // return fira_protos::Command {
-            //     id: self.id,
-            //     yellowteam: self.team == Team::Yellow,
-            //     wheel_left: 0.0,
-            //     wheel_right: 0.0,
-            // };
-            return (0.0, 0.0)
-        }
+        // if self.point().distance_to(&target_point) < 100.0 {
+        //     // self.set_speed(0.0, 0.0);
+        //     // return fira_protos::Command {
+        //     //     id: self.id,
+        //     //     yellowteam: self.team == Team::Yellow,
+        //     //     wheel_left: 0.0,
+        //     //     wheel_right: 0.0,
+        //     // };
+        //     return (0.0, 0.0)
+        // }
 
         let target_angle = self.point().orientation_to(&target_point);
         let robot_angle = self.orientation();
@@ -247,38 +250,13 @@ impl Robot {
 
     }
 
-    pub fn kick() {
-        // let goalie = Robot::new(0, Team::Yellow);
-        // let ball = Ball::new();
+    // pub fn uvf(&self, goal: Point) -> WheelsSpeeds {
+    //     use crate::UVF;
 
-        // let blue_robot = FIRASIM.blue_robot(&0);
-        // let blue_robot_point = Point::new(blue_robot.x, blue_robot.y);
-        // let obstacle = Obstacle::new(blue_robot_point, 0.2);
+    //     let uvf = UVF::new(goal, vec![]);
 
-        let field = PotentialField::new(goal, vec![]);
+    //     let force = uvf.calculate_force(&self.point());
 
-        let force = field.calculate_force(self.point());
-
-        let angle = force.angle();
-
-        let mut angle_error = angle - self.orientation();
-
-        // Normaliza o angulo
-        if angle_error > std::f64::consts::PI {
-            angle_error -= 2.0 * std::f64::consts::PI;
-        } else if angle_error < -std::f64::consts::PI {
-            angle_error += 2.0 * std::f64::consts::PI;
-        }
-
-        // Calcula a velocidade angular
-        let angular_speed = angle_error * ORIENTATION_KP;
-
-        // Calculata velocidade das rodas
-        let wheel_left = ROBOT_SPEED - angular_speed;
-        let wheel_right = ROBOT_SPEED + angular_speed;
-
-        // Send command
-        (wheel_left, wheel_right)
-
-    }
+    //     force.to_wheels_speeds(self.orientation())
+    // }
 }

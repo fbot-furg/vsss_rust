@@ -319,7 +319,7 @@ dependencies = [
 [[package]]
 name = "fbot_rust_client"
 version = "0.6.0"
-source = "git+https://github.com/user-vsssfurg/vsss_client_rust.git#b9f5d294ac116ab0b5ff1ef160db3b5f13537ed3"
+source = "git+https://github.com/fbot-furg/vsss_client_rust.git#f552862a67427c1d3612588d8a3bc7e77fb715c2"
 dependencies = [
  "bytes",
  "lazy_static",
