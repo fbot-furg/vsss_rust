@@ -189,16 +189,67 @@ impl Robot {
         // self.set_speed(wheel_left, wheel_right);
     }
 
-    pub fn potential_field(&self, target_point: Point, obstacle: Obstacle) -> (f64, f64) {
+    pub fn potential_field(&self, target_point: Point) -> fira_protos::Command {
         use crate::potential_field::*;
 
         // Se o Robo estiver muito proximo do ponto, nao faz nada
-        if self.point().distance_to(&target_point) < 20.0{
+        if self.point().distance_to(&target_point) < 0.1 {
             // self.set_speed(0.0, 0.0);
-            return (0.0, 0.0)
+            return fira_protos::Command {
+                id: self.id,
+                yellowteam: self.team == Team::Yellow,
+                wheel_left: 0.0,
+                wheel_right: 0.0,
+            };
         }
 
         let goal = Goal::new(target_point);
+
+        let blue_robot = FIRASIM.blue_robot(&0);
+        let blue_robot_point = Point::new(blue_robot.x, blue_robot.y);
+        // println!("Blue Robot: {:?}", blue_robot_point);
+        let obstacle = Obstacle::new(blue_robot_point, 0.2);
+
+        let blue_robot2 = FIRASIM.blue_robot(&1);
+        let blue_robot_point2 = Point::new(blue_robot2.x, blue_robot2.y);
+        // println!("Blue Robot: {:?}", blue_robot_point);
+        let obstacle2 = Obstacle::new(blue_robot_point2, 0.2);
+
+        let field = PotentialField::new(goal, vec![obstacle, obstacle2]);
+
+        let force = field.calculate_force(self.point());
+
+        let angle = force.angle();
+
+        let mut angle_error = angle - self.orientation();
+
+        // Normaliza o angulo
+        if angle_error > std::f64::consts::PI {
+            angle_error -= 2.0 * std::f64::consts::PI;
+        } else if angle_error < -std::f64::consts::PI {
+            angle_error += 2.0 * std::f64::consts::PI;
+        }
+
+        // Calcula a velocidade angular
+        let angular_speed = angle_error * ORIENTATION_KP;
+
+        // Calculata velocidade das rodas
+        let wheel_left = ROBOT_SPEED - angular_speed;
+        let wheel_right = ROBOT_SPEED + angular_speed;
+
+        // Send command
+        fira_protos::Command {
+            id: self.id,
+            yellowteam: self.team == Team::Yellow,
+            wheel_left: wheel_left,
+            wheel_right: wheel_right,
+        }
+
+    }
+
+    pub fn kick() {
+        // let goalie = Robot::new(0, Team::Yellow);
+        // let ball = Ball::new();
 
         // let blue_robot = FIRASIM.blue_robot(&0);
         // let blue_robot_point = Point::new(blue_robot.x, blue_robot.y);
