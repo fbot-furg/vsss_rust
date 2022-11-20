@@ -8,5 +8,6 @@ edition = "2021"
 fbot_rust_client = { version = "0.6.0", git = "https://github.com/user-vsssfurg/vsss_client_rust.git" }
 serialport = "4.2.0"
 
+plotters = "^0.3.1"
 # flo_curves = "0.1.0"
 # plotlib = "0.5.1"

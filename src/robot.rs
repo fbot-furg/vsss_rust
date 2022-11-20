@@ -1,5 +1,5 @@
 use fbot_rust_client::{FIRASIM, SSLVISION, fira_protos, ssl_vision_protos};
-use crate::{Point, Team, Origin, potential_field::Obstacle};
+use crate::{Point, Team, Goal, Obstacle};
 
 // Teste Kick
 // use flo_curves::{bezier::Curve, Coord2, BezierCurve};

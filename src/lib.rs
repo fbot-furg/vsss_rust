@@ -24,6 +24,32 @@ pub struct Point {
     y: f64
 }
 
+pub struct Goal {
+    pub point: Point
+}
+
+impl Goal {
+    pub fn new(point: Point) -> Self {
+        Self {
+            point: point
+        }
+    }
+}
+
+pub struct Obstacle {
+    pub point: Point,
+    pub radius: f64
+}
+
+impl Obstacle {
+    pub fn new(point: Point, radius: f64) -> Self {
+        Self {
+            point: point,
+            radius: radius
+        }
+    }
+}
+
 impl Point {
     pub fn new(x: f64, y: f64) -> Self {
         Self {

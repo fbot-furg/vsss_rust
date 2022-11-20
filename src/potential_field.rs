@@ -1,30 +1,4 @@
-use crate::{Point};
-
-pub struct Goal {
-    pub point: Point
-}
-
-impl Goal {
-    pub fn new(point: Point) -> Self {
-        Self {
-            point: point
-        }
-    }
-}
-
-pub struct Obstacle {
-    pub point: Point,
-    pub radius: f64
-}
-
-impl Obstacle {
-    pub fn new(point: Point, radius: f64) -> Self {
-        Self {
-            point: point,
-            radius: radius
-        }
-    }
-}
+use crate::{Point, Goal, Obstacle};
 
 pub struct PotentialField {
     goal: Goal,
