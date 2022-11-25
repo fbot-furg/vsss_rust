@@ -1,34 +1,36 @@
-use fbot_rust_client::{FIRASIM, REFEREE, fira_protos};
-use fbot_vss_rust::{Origin, Robot, Team, Ball, Point, UVF, Goal, Obstacle};
+use vsss_rust_client::{FIRASIM};
+use fbot_vss_rust::{Origin, Robot, Team, Ball, Vector, UVF, Command};
+
+use clap::Parser;
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+   #[arg(short, long, default_value = "y")]
+   team: String
+}
+
 
 fn main() {
-    let ball = Ball::new(Origin::FIRASIM);
-    let robot = Robot::new(Origin::FIRASIM, 0, Team::Yellow);
+    let args = Args::parse();
+    
+    //Get team from args, default is yellow
+    let team = Team::from_str(&args.team);
 
-    let mut commands: [Option<fira_protos::Command>;1] = [None];
+    let ball = Ball::new(Origin::FIRASIM);
+    let robot = Robot::new(Origin::FIRASIM, 0, team);
     
     loop {
-        let uvf = UVF::new(ball.point(), vec![]);
+        let uvf = UVF::new(ball.point(), vec![], team);
 
         let force = uvf.calculate_force(&robot.point());
-        let target_point = Point::new(robot.point().x() - force.x(), robot.point().y() - force.y());
+        let target_point = Vector::new(robot.point().x() - force.x(), robot.point().y() - force.y());
 
         let speed = robot.go_to(target_point);
 
-        let cmd =  fira_protos::Command {
-            id: 0,
-            yellowteam: true,
-            wheel_left: speed.0,
-            wheel_right: speed.1,
-        };
-        
-        commands[robot.id() as usize] = Some(cmd);
+        let command = Command::new(0, team.to_bool(), speed.0, speed.1);
 
-        let robot_commands: Vec<fira_protos::Command> = commands.iter().filter_map(|x| x.to_owned()).collect();
-
-        FIRASIM.send_command(fira_protos::Commands {
-            robot_commands
-        }); 
+        FIRASIM.send_command(vec![command]); 
     }
 }
 

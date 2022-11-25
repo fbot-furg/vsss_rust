@@ -1,5 +1,5 @@
-use crate::{Point, Origin};
-use fbot_rust_client::{FIRASIM, SSLVISION};
+use crate::{Vector, Origin};
+use vsss_rust_client::{FIRASIM, SSLVISION};
 pub struct Ball {
     origin: Origin
 } 
@@ -23,15 +23,15 @@ impl Ball {
         }
     }
 
-    pub fn point(&self) -> Point {
-        Point::new(self.x(), self.y())
+    pub fn point(&self) -> Vector {
+        Vector::new(self.x(), self.y())
     }
 
-    pub fn control_point(&self) -> Point{
+    pub fn control_point(&self) -> Vector{
         let ball = FIRASIM.ball();
-        let ball_point = Point::new(ball.x, ball.y);
+        let ball_point = Vector::new(ball.x, ball.y);
     
-        let goal_point = Point::new(-0.75, 0.0);
+        let goal_point = Vector::new(-0.75, 0.0);
         let cp = 0.5;
         
         let orientation_to_goal = ball_point.orientation_to(&goal_point);
@@ -39,7 +39,7 @@ impl Ball {
         let cp_x = orientation_to_goal.cos() * cp;
         let cp_y = orientation_to_goal.sin() * cp;
     
-        Point::new(ball.x + cp_x, ball.y + cp_y)
+        Vector::new(ball.x + cp_x, ball.y + cp_y)
         
     }
 }

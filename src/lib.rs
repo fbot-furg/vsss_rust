@@ -4,10 +4,13 @@ mod ball;
 mod potential_field;
 mod uvf;
 
+use vsss_rust_client::{fira_protos};
+
 pub use robot::Robot;
 pub use ball::Ball;
 pub use uvf::UVF;
 pub use potential_field::PotentialField;
+pub use fira_protos::Command;
 
 pub type WheelsSpeeds = (f64, f64);
 
@@ -17,6 +20,24 @@ pub enum Team{
     Blue
 }
 
+impl Team {
+    pub fn from_str(team: &str) -> Self {
+        match team {
+            "yellow" => Team::Yellow,
+            "y" => Team::Yellow,
+            "blue" => Team::Blue,
+            "b" => Team::Blue,
+            _ => panic!("Invalid team")
+        }
+    }
+
+    pub fn to_bool(&self) -> bool {
+        match self {
+            Team::Yellow => true,
+            Team::Blue => false
+        }
+    }
+}
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Origin{
     FIRASIM,
@@ -24,11 +45,11 @@ pub enum Origin{
 }
 
 pub struct Goal {
-    pub point: Point
+    pub point: Vector
 }
 
 impl Goal {
-    pub fn new(point: Point) -> Self {
+    pub fn new(point: Vector) -> Self {
         Self {
             point: point
         }
@@ -36,12 +57,12 @@ impl Goal {
 }
 
 pub struct Obstacle {
-    pub point: Point,
+    pub point: Vector,
     pub radius: f64
 }
 
 impl Obstacle {
-    pub fn new(point: Point, radius: f64) -> Self {
+    pub fn new(point: Vector, radius: f64) -> Self {
         Self {
             point: point,
             radius: radius
@@ -50,12 +71,12 @@ impl Obstacle {
 }
 
 #[derive(Debug)]
-pub struct Point {
+pub struct Vector {
     x: f64,
     y: f64
 }
 
-impl Point {
+impl Vector {
     pub fn new(x: f64, y: f64) -> Self {
         Self {
             x: x,
@@ -71,14 +92,14 @@ impl Point {
         self.y
     }
 
-    pub fn orientation_to(&self, p: &Point) -> f64 {
+    pub fn orientation_to(&self, p: &Vector) -> f64 {
         let x = p.x - self.x;
         let y = p.y - self.y;
 
         y.atan2(x)
     }
 
-    pub fn distance_to(&self, p: &Point) -> f64 {
+    pub fn distance_to(&self, p: &Vector) -> f64 {
         let x = p.x - self.x;
         let y = p.y - self.y;
 
@@ -97,8 +118,8 @@ impl Point {
         self.y.sin()
     }
 
-    pub fn translate(&self, point: &Point) -> Point {
-        Point::new(self.x - point.x, self.y - point.y)
+    pub fn translate(&self, point: &Vector) -> Vector {
+        Vector::new(self.x - point.x, self.y - point.y)
     }
 
     pub fn rotate(&self, angle: f64) -> Self {

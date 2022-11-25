@@ -1,17 +1,20 @@
 use plotters::prelude::*;
-use crate::{Point, Obstacle};
+use crate::{Vector, Obstacle, Team};
 //Unit Vector Field
 pub struct UVF {
     de: f64,
     kr: f64,
-    center_goal: Point,
-    goal: Point,
+    center_goal: Vector,
+    goal: Vector,
     obstacles: Vec<Obstacle>
 }
 
 impl UVF {
-    pub fn new(goal: Point, obstacles: Vec<Obstacle>) -> Self {
-        let center_goal = Point::new(70.0 , 0.0);
+    pub fn new(goal: Vector, obstacles: Vec<Obstacle>, team: Team) -> Self {
+        let center_goal = match team {
+            Team::Yellow => Vector::new(70.0 , 0.0),
+            Team::Blue => Vector::new(-70.0 , 0.0)
+        };
 
         Self {
             de: 8.0,
@@ -22,10 +25,9 @@ impl UVF {
         }
     }
 
-    pub fn calculate_force(&self, point: &Point) -> Point {
+    pub fn calculate_force(&self, point: &Vector) -> Vector {
         let angle_to_center_goal = self.goal.orientation_to(&self.center_goal);
 
-        //translate and rotate point to goal
         let point = point
             .translate(&self.goal)
             .rotate(-angle_to_center_goal);
@@ -36,9 +38,9 @@ impl UVF {
         locomotion_field
     }
 
-    fn calculate_locomotion_field(&self, point: &Point, fix_angle: f64) -> Point {       
-        let pr = Point::new(point.x, point.y - self.de);
-        let pl = Point::new(point.x, point.y + self.de);
+    fn calculate_locomotion_field(&self, point: &Vector, fix_angle: f64) -> Vector {       
+        let pr = Vector::new(point.x, point.y - self.de);
+        let pl = Vector::new(point.x, point.y + self.de);
         
         let vector =  if point.y > self.de {
             self.hs_ccw(&pr)
@@ -50,48 +52,48 @@ impl UVF {
 
             let tuf = sin.atan2(cos);
 
-            Point::new(tuf.cos(), tuf.sin())
+            Vector::new(tuf.cos(), tuf.sin())
         };
 
         vector.rotate(fix_angle)
     }
 
-    fn hs_cw(&self, point: &Point) -> Point {
+    fn hs_cw(&self, point: &Vector) -> Vector {
         let r = (point.x.powi(2) + point.y.powi(2)).sqrt();
         let theta = point.y.atan2(point.x);
 
         if r > self.de {
             let hs_cw = theta - 90.0_f64.to_radians() * ((self.de + self.kr) / (r + self.kr));
 
-            Point {
+            Vector {
                 x: hs_cw.cos(),
                 y: hs_cw.sin()
             }
         } else {
             let hs_cw = theta + 90.0_f64.to_radians() * (r / self.de).sqrt();
 
-            Point {
+            Vector {
                 x: hs_cw.cos(),
                 y: hs_cw.sin()
             }
         }
     }
 
-    fn hs_ccw(&self, point: &Point) -> Point {
+    fn hs_ccw(&self, point: &Vector) -> Vector {
         let r = (point.x.powi(2) + point.y.powi(2)).sqrt();
         let theta = point.y.atan2(point.x);
 
         if r > self.de {
             let hs_ccw = theta + 90.0_f64.to_radians() * ((self.de + self.kr) / (r + self.kr));
 
-            Point {
+            Vector {
                 x: hs_ccw.cos(),
                 y: hs_ccw.sin()
             }
         } else {
             let hs_ccw = theta - 90.0_f64.to_radians() * (r / self.de).sqrt();
 
-            Point {
+            Vector {
                 x: hs_ccw.cos(),
                 y: hs_ccw.sin()
             }
@@ -137,7 +139,7 @@ impl UVF {
         let mut vector_field = Vec::new();
         for x in -50..50 {
             for y in -50..50{
-                let point = Point::new(x as f64, y as f64);
+                let point = Vector::new(x as f64, y as f64);
                 
                 let vector = self.calculate_force(&point);
                 vector_field.push((point.x, point.y, vector.x, vector.y));

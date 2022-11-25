@@ -1,7 +1,7 @@
 use std::vec;
 
-use fbot_rust_client::{FIRASIM, SSLVISION, fira_protos, ssl_vision_protos};
-use crate::{Point, Team, Goal, Obstacle, Origin, WheelsSpeeds};
+use vsss_rust_client::{FIRASIM, SSLVISION, fira_protos, ssl_vision_protos};
+use crate::{Vector, Team, Goal, Obstacle, Origin, WheelsSpeeds};
 
 // Teste Kick
 // use flo_curves::{bezier::Curve, Coord2, BezierCurve};
@@ -77,38 +77,38 @@ impl Robot {
         self.orientation() + std::f64::consts::PI
     }
 
-    pub fn point(&self) -> Point {
-        Point::new(self.x(), self.y())
+    pub fn point(&self) -> Vector {
+        Vector::new(self.x(), self.y())
     }
 
-    pub fn control_point(&self) -> Point {
+    pub fn control_point(&self) -> Vector {
         let cp = 1.0;
         let (x, y, orientation) = (self.x(), self.y(), self.orientation());
 
         let cp_x = orientation.cos() * cp;
         let cp_y = orientation.sin() * cp;
 
-        Point::new(x + cp_x, y + cp_y)
+        Vector::new(x + cp_x, y + cp_y)
     }
 
     // TODO
     // Extrair a logica de envio de comandos para outro ponto
-    pub fn set_speed(&self, wheel_left: f64, wheel_right: f64) {
-        let commands = fira_protos::Commands {
-            robot_commands: vec![
-                fira_protos::Command {
-                    id: self.id,
-                    yellowteam: self.team == Team::Yellow,
-                    wheel_left: wheel_left,
-                    wheel_right: wheel_right,
-                },
-            ]
-        };
+    // pub fn set_speed(&self, wheel_left: f64, wheel_right: f64) {
+    //     let commands = fira_protos::Commands {
+    //         robot_commands: vec![
+    //             fira_protos::Command {
+    //                 id: self.id,
+    //                 yellowteam: self.team == Team::Yellow,
+    //                 wheel_left: wheel_left,
+    //                 wheel_right: wheel_right,
+    //             },
+    //         ]
+    //     };
 
-        FIRASIM.send_command(commands);
-    }
+    //     // FIRASIM.send_command(commands);
+    // }
 
-    pub fn go_to(&self, target_point: Point) -> WheelsSpeeds{
+    pub fn go_to(&self, target_point: Vector) -> WheelsSpeeds{
         
         // Se o Robo estiver muito proximo do ponto, nao faz nada
         // if self.point().distance_to(&target_point) < 0.1 {
@@ -139,7 +139,7 @@ impl Robot {
     }
 
     // pub fn go_to2(&self, target_point: Point) -> fira_protos::Command {
-    pub fn go_to2(&self, target_point: Point) -> WheelsSpeeds {
+    pub fn go_to2(&self, target_point: Vector) -> WheelsSpeeds {
         // println!("distance: {}", self.point().distance_to(&target_point) );
 
         // Se o Robo estiver muito proximo do ponto, nao faz nada
@@ -192,7 +192,7 @@ impl Robot {
         // self.set_speed(wheel_left, wheel_right);
     }
 
-    pub fn potential_field(&self, target_point: Point) -> fira_protos::Command {
+    pub fn potential_field(&self, target_point: Vector) -> fira_protos::Command {
         use crate::potential_field::*;
 
         // Se o Robo estiver muito proximo do ponto, nao faz nada
@@ -209,12 +209,12 @@ impl Robot {
         let goal = Goal::new(target_point);
 
         let blue_robot = FIRASIM.blue_robot(&0);
-        let blue_robot_point = Point::new(blue_robot.x, blue_robot.y);
+        let blue_robot_point = Vector::new(blue_robot.x, blue_robot.y);
         // println!("Blue Robot: {:?}", blue_robot_point);
         let obstacle = Obstacle::new(blue_robot_point, 0.2);
 
         let blue_robot2 = FIRASIM.blue_robot(&1);
-        let blue_robot_point2 = Point::new(blue_robot2.x, blue_robot2.y);
+        let blue_robot_point2 = Vector::new(blue_robot2.x, blue_robot2.y);
         // println!("Blue Robot: {:?}", blue_robot_point);
         let obstacle2 = Obstacle::new(blue_robot_point2, 0.2);
 

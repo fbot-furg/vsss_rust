@@ -1,4 +1,4 @@
-use crate::{Point, Goal, Obstacle};
+use crate::{Vector, Goal, Obstacle};
 
 pub struct PotentialField {
     goal: Goal,
@@ -13,9 +13,9 @@ impl PotentialField {
         }
     }
 
-    pub fn calculate_force(&self, point: Point) -> Point {
+    pub fn calculate_force(&self, point: Vector) -> Vector {
         //Attractive potential
-        let mut force = Point {
+        let mut force = Vector {
             x: self.goal.point.x - point.x,
             y: self.goal.point.y - point.y,
         };
@@ -24,7 +24,7 @@ impl PotentialField {
         for obstacle in &self.obstacles {
             let distance = point.distance_to(&obstacle.point);
 
-            let mut repulsive_force = Point {
+            let mut repulsive_force = Vector {
                 x: obstacle.point.x - point.x,
                 y: obstacle.point.y - point.y,
             };
