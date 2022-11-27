@@ -1,5 +1,7 @@
 use crate::{Vector, Origin};
 use vsss_rust_client::{FIRASIM, SSLVISION};
+
+#[derive(Debug)]
 pub struct Ball {
     origin: Origin
 } 

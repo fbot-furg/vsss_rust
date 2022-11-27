@@ -379,6 +379,7 @@ name = "fbot_vss_rust"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "lazy_static",
  "plotters",
  "serialport",
  "vsss_rust_client",
@@ -1266,8 +1267,8 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 
 [[package]]
 name = "vsss_rust_client"
-version = "0.6.1"
-source = "git+https://github.com/fbot-furg/vsss_client_rust.git#ce975eabf0b541cda7f86f0f752937dc85b00831"
+version = "0.6.2"
+source = "git+https://github.com/fbot-furg/vsss_client_rust.git#ef711d2a4461ec98cf98f6c7beb3c8ff2ec315a9"
 dependencies = [
  "bytes",
  "lazy_static",

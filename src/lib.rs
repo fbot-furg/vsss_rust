@@ -4,13 +4,32 @@ mod ball;
 mod potential_field;
 mod uvf;
 
-use vsss_rust_client::{fira_protos};
+use vsss_rust_client::{FIRASIM, fira_protos};
 
 pub use robot::Robot;
 pub use ball::Ball;
 pub use uvf::UVF;
 pub use potential_field::PotentialField;
 pub use fira_protos::Command;
+
+use clap::Parser;
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+   #[arg(short, long, default_value = "y")]
+   team: String
+}
+
+#[macro_use]
+extern crate lazy_static;
+
+lazy_static!(
+    pub static ref TEAM: Team = {
+        let args = Args::parse();
+        Team::from_str(&args.team)
+    };
+);
 
 pub type WheelsSpeeds = (f64, f64);
 
@@ -56,6 +75,7 @@ impl Goal {
     }
 }
 
+#[derive(Debug)]
 pub struct Obstacle {
     pub point: Vector,
     pub radius: f64
@@ -68,9 +88,26 @@ impl Obstacle {
             radius: radius
         }
     }
+
+    //retur enemy team as vector of Obstacle
+    pub fn enemy_team_fira() -> Vec<Obstacle> {
+        let enemy_team = match *TEAM {
+            Team::Yellow => FIRASIM.blue_robots(),
+            Team::Blue => FIRASIM.yellow_robots()
+        };
+
+        enemy_team.iter().map(|robot| {
+            let point = Vector::new(robot.x * 100.0, robot.y * 100.0);
+            Obstacle::new(point, 10.0)
+        }).collect()
+    }
+
+    pub fn point(&self) -> Vector {
+        self.point
+    }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Vector {
     x: f64,
     y: f64
@@ -103,7 +140,7 @@ impl Vector {
         let x = p.x - self.x;
         let y = p.y - self.y;
 
-        (x*x + y*y).sqrt()
+        (x.powi(2) + y.powi(2)).sqrt()
     }
 
     pub fn angle(&self) -> f64 {
@@ -127,5 +164,23 @@ impl Vector {
         let y = self.x * angle.sin() + self.y * angle.cos();
 
         Self::new(x, y)
+    }
+
+    pub fn normalize(&self) -> Self {
+        let norm = (self.x * self.x + self.y * self.y).sqrt();
+        
+        Self::new(self.x / norm, self.y / norm)
+    }
+
+    pub fn scale(&self, scale: f64) -> Self {
+        Self::new(self.x * scale, self.y * scale)
+    }
+
+    pub fn add(&self, point: &Vector) -> Self {
+        Self::new(self.x + point.x, self.y + point.y)
+    }
+
+    pub fn opposite(&self) -> Self {
+        Self::new(-self.x, -self.y)
     }
 }

@@ -1,25 +1,40 @@
 use std::vec;
 
 use vsss_rust_client::{FIRASIM, SSLVISION, fira_protos, ssl_vision_protos};
-use crate::{Vector, Team, Goal, Obstacle, Origin, WheelsSpeeds};
+use crate::{TEAM, Vector, Team, Goal, Obstacle, Origin, WheelsSpeeds};
 
 // Teste Kick
 // use flo_curves::{bezier::Curve, Coord2, BezierCurve};
 // use std::{thread, time};
-
-pub const ORIENTATION_KP: f64 = 18.0;
-pub const ROBOT_SPEED: f64 = 40.0;
 
 #[derive(Debug)]
 pub struct Robot {
     origin: Origin,
     id: u32,
     team: Team,
+    orientation_kp: f64,
+    robot_speed: f64,
 }
 
 impl Robot {
-    pub fn new(origin: Origin, id: u32, team: Team) -> Self {
-        Self { origin, id, team }
+    pub fn new(origin: Origin, id: u32) -> Self {
+        Self { 
+            origin, 
+            id, 
+            team: *TEAM, 
+            orientation_kp: 10.0,
+            robot_speed: 20.0,
+        }
+    }
+
+    pub fn set_orientation_kp(&mut self, kp: f64) -> &mut Self {
+        self.orientation_kp = kp;
+        self
+    }
+
+    pub fn set_robot_speed(&mut self, speed: f64) -> &mut Self {
+        self.robot_speed = speed;
+        self
     }
 
     fn robot_fira(&self) -> fira_protos::Robot{
@@ -129,11 +144,11 @@ impl Robot {
         }
 
         // Calcula a velocidade angular
-        let angular_speed = angle_error * ORIENTATION_KP;
+        let angular_speed = angle_error * self.orientation_kp;
 
         // Calculata velocidade das rodas
-        let wheel_left = ROBOT_SPEED - angular_speed;
-        let wheel_right = ROBOT_SPEED + angular_speed;
+        let wheel_left = self.robot_speed - angular_speed;
+        let wheel_right = self.robot_speed + angular_speed;
 
         (wheel_left, wheel_right)
     }
@@ -143,16 +158,16 @@ impl Robot {
         // println!("distance: {}", self.point().distance_to(&target_point) );
 
         // Se o Robo estiver muito proximo do ponto, nao faz nada
-        // if self.point().distance_to(&target_point) < 100.0 {
-        //     // self.set_speed(0.0, 0.0);
-        //     // return fira_protos::Command {
-        //     //     id: self.id,
-        //     //     yellowteam: self.team == Team::Yellow,
-        //     //     wheel_left: 0.0,
-        //     //     wheel_right: 0.0,
-        //     // };
-        //     return (0.0, 0.0)
-        // }
+        if self.point().distance_to(&target_point) < 5.0 {
+            // self.set_speed(0.0, 0.0);
+            // return fira_protos::Command {
+            //     id: self.id,
+            //     yellowteam: self.team == Team::Yellow,
+            //     wheel_left: 0.0,
+            //     wheel_right: 0.0,
+            // };
+            return (0.0, 0.0)
+        }
 
         let target_angle = self.point().orientation_to(&target_point);
         let robot_angle = self.orientation();
@@ -162,9 +177,9 @@ impl Robot {
         let angle_error_reverse = target_angle - robot_angle_reverse;
 
         let (mut smallest_angle_error, speed) = if angle_error.abs() < angle_error_reverse.abs() {
-            (angle_error, ROBOT_SPEED)
+            (angle_error, self.robot_speed)
         } else {
-            (angle_error_reverse, -ROBOT_SPEED)
+            (angle_error_reverse, -self.robot_speed)
         };
 
         // Normaliza o angulo
@@ -174,7 +189,7 @@ impl Robot {
             smallest_angle_error += 2.0 * std::f64::consts::PI;
         }
         
-        let angular_speed = smallest_angle_error * ORIENTATION_KP;
+        let angular_speed = smallest_angle_error * self.orientation_kp;
 
         // Calcular velocidade das rodas
         let wheel_left = (speed - angular_speed).clamp(-50.0, 50.0);
@@ -234,11 +249,11 @@ impl Robot {
         }
 
         // Calcula a velocidade angular
-        let angular_speed = angle_error * ORIENTATION_KP;
+        let angular_speed = angle_error * self.orientation_kp;
 
         // Calculata velocidade das rodas
-        let wheel_left = ROBOT_SPEED - angular_speed;
-        let wheel_right = ROBOT_SPEED + angular_speed;
+        let wheel_left = self.robot_speed - angular_speed;
+        let wheel_right = self.robot_speed + angular_speed;
 
         // Send command
         fira_protos::Command {
