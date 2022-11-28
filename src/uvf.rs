@@ -1,5 +1,6 @@
 use plotters::prelude::*;
 use crate::{TEAM, Vector, Obstacle, Team};
+
 //Unit Vector Field
 pub struct UVF {
     de: f64,
@@ -122,26 +123,7 @@ impl UVF {
         } else {
             self.hs_cw(&pl)
         };
-        
-        // let vector =  if point.y >= self.de {
-        //     self.hs_ccw(&pr)
-        // } else if point.y < -self.de {
-        //     self.hs_cw(&pl)
-        // } else {
-            
-        // };
 
-        // let yl = self.de + point.y;
-            // let yr = self.de - point.y;
-
-            // let x = (yl * self.hs_ccw(&pl).cos()) + (yr * self.hs_cw(&pr).cos());
-            // let y = (yl * self.hs_ccw(&pl).sin()) + (yr * self.hs_cw(&pr).sin());
-            
-            // let angle = y.atan2(x);
-
-            // Vector::new(angle.cos(), angle.sin())
-        
-        // vector
         vector.rotate(fix_angle)
     }
 
@@ -166,18 +148,10 @@ impl UVF {
 
         if r > self.de {
             let hs_ccw = theta - 90.0_f64.to_radians() * ((self.de + self.kr) / (r + self.kr));
-
-            Vector {
-                x: hs_ccw.cos(),
-                y: hs_ccw.sin()
-            }
+            Vector::new(hs_ccw.cos(), hs_ccw.sin())
         } else {
             let hs_ccw = theta - 90.0_f64.to_radians() * (r / self.de).sqrt();
-
-            Vector {
-                x: hs_ccw.cos(),
-                y: hs_ccw.sin()
-            }
+            Vector::new(hs_ccw.cos(), hs_ccw.sin())
         }
     }
 
@@ -257,11 +231,6 @@ impl UVF {
             ))?;
                 
         }
-
-        // chart.draw_series(LineSeries::new(
-        //     vec![(x, y), (x + dx, y + dy)],
-        //     &RED,
-        // ))?;
 
         Ok(())
     }

@@ -56,6 +56,13 @@ impl Team {
             Team::Blue => false
         }
     }
+
+    pub fn enemy_goal_x(&self) -> f64 {
+        match self {
+            Team::Yellow => 65.0,
+            Team::Blue => -65.0
+        }
+    }
 }
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Origin{
