@@ -59,8 +59,8 @@ impl Team {
 
     pub fn enemy_goal_x(&self) -> f64 {
         match self {
-            Team::Yellow => 65.0,
-            Team::Blue => -65.0
+            Team::Yellow => 68.0,
+            Team::Blue => -68.0
         }
     }
 }

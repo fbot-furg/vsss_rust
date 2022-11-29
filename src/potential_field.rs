@@ -40,8 +40,6 @@ impl PotentialField {
             }
         }
 
-        println!("Force: {:?}", force);
-
         //clamp force to 50 -50
         force.x = force.x.clamp(-50.0, 50.0);
         force.y = force.y.clamp(-50.0, 50.0);

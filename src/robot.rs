@@ -170,22 +170,87 @@ impl Robot {
     // }
 
     
-    pub fn go_to2(&mut self, target_point: Vector, ball_point: Vector) -> &mut Self {
+    pub fn go_to2(&mut self, target_point: Vector) -> &mut Self {
 
         // Se o Robo estiver muito proximo do ponto, nao faz nada
-        // if self.point().distance_to(&target_point) < 1.0 {
-        //     self.distance_error_sum = 0.0;
-        //     self.angle_error_sum = 0.0;
-        //     return self.set_wheels_speeds((0.0, 0.0))
-        // }
+        if self.point().distance_to(&target_point) < 3.0 {
+            self.distance_error_sum = 0.0;
+            self.angle_error_sum = 0.0;
+            return self.set_wheels_speeds((0.0, 0.0))
+        }
 
         let target_angle = self.point().orientation_to(&target_point);
         
         let robot_angle = self.orientation();
         let robot_angle_reverse = self.reverse_orientation();
 
-        let distance_error = self.point().distance_to(&ball_point);
-        self.distance_error_sum += distance_error / 100.0;
+        let distance_error = self.point().distance_to(&target_point);
+        self.distance_error_sum = (self.distance_error_sum + (distance_error / 100.0)).clamp(0.0, 10.0);
+        
+        let angle_error = target_angle - robot_angle;
+        let angle_error_reverse = target_angle - robot_angle_reverse;
+
+        //Controle de qual lado ele vai escolher para ir
+        let (mut smallest_angle_error, rotation) = if angle_error.abs() < angle_error_reverse.abs() {
+            (angle_error, Rotation::Clockwise)
+        } else {
+            (angle_error_reverse, Rotation::CounterClockwise)
+        };
+
+        if smallest_angle_error > std::f64::consts::PI {
+            smallest_angle_error -= 2.0 * std::f64::consts::PI;
+        } else if smallest_angle_error < -std::f64::consts::PI {
+            smallest_angle_error += 2.0 * std::f64::consts::PI;
+        }
+
+        if smallest_angle_error.abs() < 0.08 {
+            self.angle_error_sum = 0.0;
+        }
+
+        self.angle_error_sum += smallest_angle_error / 100.0;
+
+        //calcula velocidade de rotacao usando PID
+        let mut rotation_speed = smallest_angle_error * self.orientation_kp; 
+        rotation_speed += self.angle_error_sum * self.orientation_ki;
+        rotation_speed += (smallest_angle_error - self.angle_error_last) * self.orientation_kd;
+
+        let rotation_speed = rotation_speed.clamp(-100.0, 100.0);
+        
+        let mut speed = self.distance_kp / distance_error;
+        speed += self.distance_error_sum * self.distance_ki;
+        speed += (distance_error - self.distance_error_last) * self.distance_kd;
+
+        speed *= match rotation {
+            Rotation::Clockwise => 1.0,
+            Rotation::CounterClockwise => -1.0
+        };
+
+        let speed = speed.clamp(-100.0, 100.0);
+
+
+        self.distance_error_last = distance_error;
+        self.angle_error_last = smallest_angle_error;
+
+    
+        let wheels_speeds = match rotation {
+            Rotation::Clockwise => (speed - rotation_speed, speed + rotation_speed),
+            Rotation::CounterClockwise => (speed - rotation_speed, speed + rotation_speed)
+        };
+        
+        return self.set_wheels_speeds(wheels_speeds)
+    }
+
+    pub fn go_to_attack(&mut self, target_point: Vector, ball_point: Vector) -> &mut Self {
+
+        let target_angle = self.point().orientation_to(&target_point);
+        
+        let robot_angle = self.orientation();
+        let robot_angle_reverse = self.reverse_orientation();
+
+        let distance_error = self.point().distance_to(&target_point);
+
+        // let distance_error = self.point().distance_to(&ball_point);
+        // self.distance_error_sum += distance_error / 100.0;
         
         let angle_error = target_angle - robot_angle;
         let angle_error_reverse = target_angle - robot_angle_reverse;
@@ -203,39 +268,42 @@ impl Robot {
             smallest_angle_error += 2.0 * std::f64::consts::PI;
         }
 
-        println!("Angle Error: {}", smallest_angle_error);
-
         if smallest_angle_error.abs() < 0.05 {
             self.angle_error_sum = 0.0;
-        }
+        } else {
+            if smallest_angle_error.is_nan() {
+                smallest_angle_error = 0.0;
+            }
 
-        self.angle_error_sum += smallest_angle_error / 100.0;
+            self.angle_error_sum = (self.angle_error_sum + (smallest_angle_error / 100.0));
+        }        
 
         //calcula velocidade de rotacao usando PID
         let mut rotation_speed = smallest_angle_error * self.orientation_kp; 
         rotation_speed += self.angle_error_sum * self.orientation_ki;
         rotation_speed += (smallest_angle_error - self.angle_error_last) * self.orientation_kd;
 
-        let rotation_speed = rotation_speed.clamp(-100.0, 100.0);
+        let rotation_speed = rotation_speed.clamp(-150.0, 150.0);
         
         let mut speed = distance_error * self.distance_kp;
         speed += self.distance_error_sum * self.distance_ki;
         speed += (distance_error - self.distance_error_last) * self.distance_kd;
+        
+        // if self.point().distance_to(&target_point) < 2.0 {
+        //     speed += 50.0;
+        // }
 
         speed *= match rotation {
             Rotation::Clockwise => 1.0,
             Rotation::CounterClockwise => -1.0
         };
 
-        let speed = speed.clamp(-100.0, 100.0);
+        let speed = speed.clamp(-120.0, 120.0);
 
 
         self.distance_error_last = distance_error;
         self.angle_error_last = smallest_angle_error;
 
-        println!("speed: {}, rotation_speed: {}", speed, rotation_speed);
-
-    
         let wheels_speeds = match rotation {
             Rotation::Clockwise => (speed - rotation_speed, speed + rotation_speed),
             Rotation::CounterClockwise => (speed - rotation_speed, speed + rotation_speed)

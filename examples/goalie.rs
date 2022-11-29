@@ -8,7 +8,7 @@ fn main() {
     let mut goalie = Robot::new(Origin::FIRASIM, 1);
 
     goalie
-        .set_distance_pid((1.0, 0.002, 1.0))
+        .set_distance_pid((50.0, 0.002, 1.0))
         .set_orientation_pid((20.0, 0.1, 1.0));
 
     loop {
